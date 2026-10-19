@@ -1,3 +1,4 @@
+data/
 .env
 .token*.json
 __pycache__/
