@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import re
+import time
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
@@ -26,6 +27,7 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 TIMEOUT = 20
+BLOCK_RETRY_WAITS = (5, 20, 45)  # seconds to wait before each retry after a bot check
 MIN_SIDE = 200  # skip icons, logos, tracking pixels
 MAX_CANDIDATES = 12
 MAX_URLS_TRIED = 40
@@ -44,11 +46,38 @@ def rel(path: Path) -> str:
     return str(path.relative_to(data_dir()))
 
 
+# one session for the whole run, so cookies a site sets are sent back like a browser would
+SESSION = requests.Session()
+
+
+def _is_bot_check(html: str) -> bool:
+    lowered = html[:20000].lower()
+    return "captcha" in lowered and ("robot" in lowered or "automated access" in lowered or "opfcaptcha" in lowered)
+
+
+def _amazon_canonical(url: str) -> str:
+    """Amazon product links carry long search-tracking query strings; /dp/<ASIN> is the same page."""
+    m = re.search(r"amazon\.[a-z.]+/(?:.*/)?(?:dp|gp/product)/([A-Z0-9]{10})", url)
+    return f"https://www.amazon.com/dp/{m.group(1)}" if m else url
+
+
+def _download_page(url: str) -> str:
+    page_url = _amazon_canonical(url)
+    for wait in (0, *BLOCK_RETRY_WAITS):
+        if wait:
+            print(f"    blocked by a bot check, retrying in {wait}s...")
+            time.sleep(wait)
+        html = _download(page_url).decode("utf-8", errors="replace")
+        if not _is_bot_check(html):
+            return html
+    raise FetchError("the site kept showing a bot check (captcha); try again later, or set `image` for this item")
+
+
 def _download(url: str, referer: str | None = None) -> bytes:
     headers = dict(HEADERS)
     if referer:
         headers["Referer"] = referer
-    resp = requests.get(url, headers=headers, timeout=TIMEOUT)
+    resp = SESSION.get(url, headers=headers, timeout=TIMEOUT)
     resp.raise_for_status()
     return resp.content
 
@@ -172,14 +201,16 @@ def _scrape_candidates(item: Item, refresh: bool) -> int:
     out = cache_dir(item)
     manifest = out / "candidates.json"
     if manifest.exists() and not refresh:
-        return len(json.loads(manifest.read_text()))
+        cached = json.loads(manifest.read_text())
+        if cached:  # an empty result means the last attempt failed, so try again
+            return len(cached)
 
     for f in out.glob("candidate-*"):
         f.unlink()
     out.mkdir(parents=True, exist_ok=True)
 
     try:
-        html = _download(item.url).decode("utf-8", errors="replace")
+        html = _download_page(item.url)
     except requests.RequestException as e:
         raise FetchError(f"could not load page ({e})") from e
 
