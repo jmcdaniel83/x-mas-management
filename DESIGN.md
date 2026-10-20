@@ -71,13 +71,20 @@ A top-level key in the list file that isn't defined in `groups.toml` is an error
 | Command | What it does |
 |---|---|
 | `fetch <year>` | For items without an `image`, download the page and cache candidate images (`og:image`, product images) |
-| `pick <year>` | Open a local page of thumbnails per item. The choice is saved to state |
+| `pick <year>` | Open a local page of thumbnails per item. The chosen image is copied to `data/images/<year>/<group>/<item-name>.jpg` and written into the item's `image` key in the list file. `--all` re-picks items whose image came from an earlier pick |
 | `rollover <year>` | For the previous year's boards: remove collaborators, then set privacy to secret |
 | `sync <year>` | Create each group's board if missing, add its collaborators, and create pins for items not yet pinned |
 
 Annual order: `rollover` → `sync`. Last year's boards are made private before the new ones show up, so family members never see two "Christmas" boards at the same time.
 
 `sync` is idempotent. State records each item's pin ID, so re-running it during the season only pins new items. Every image is resolved to a cached local file and uploaded directly (`image_base64`), so pins don't depend on retailer image URLs staying alive.
+
+### Picked images
+
+- The list file is the source of truth. After `pick`, the item carries a normal `image = "images/..."` line, so the cache can be deleted without losing picks.
+- Filenames never collide. If the name is taken by another item's image, a user-provided file, or anything already on disk, `-2`, `-3`, ... is appended. A pick only overwrites the same item's previous pick.
+- To re-pick, run `pick --all`, or delete the `image` line and run `fetch` then `pick`.
+- The list file is edited line by line, so comments and layout are kept. The result is re-parsed and checked before it is saved.
 
 ## Pinterest API vs. browser automation
 

@@ -1,0 +1,36 @@
+# Christmas wish list template.
+# Copy to data/lists/xmas-list-<year>.toml, e.g.:
+#   cp examples/xmas-list.toml data/lists/xmas-list-2027.toml
+#
+# Each [[group]] block is one item on that group's board.
+# Group names must match a section in data/groups.toml.
+#
+#   name         required  pin title
+#   url          required  link the pin points to
+#   image        optional  image URL, or a path relative to data/ (e.g. "images/socks.jpg")
+#                          leave it out to scrape the page with `fetch` and choose with `pick`
+#   description  optional  pin description (size, color, notes)
+
+# --- My family: "Christmas <year>" ---------------------------------------
+
+[[family]]
+name = "Item with an image URL"
+url = "https://example.com/product-one"
+image = "https://example.com/images/product-one.jpg"
+
+[[family]]
+name = "Item with a local image"
+url = "https://example.com/product-two"
+image = "images/product-two.jpg"
+description = "Size L, any dark color"
+
+[[family]]
+name = "Item without an image"
+url = "https://example.com/product-three"
+
+# --- Kelley: "Christmas <year> (Kelley)" ---------------------------------
+
+[[kelley]]
+name = "Another item"
+url = "https://example.com/product-four"
+description = "Prefer the 10-inch"

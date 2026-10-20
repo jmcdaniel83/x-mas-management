@@ -1,0 +1,17 @@
+[project]
+name = "xmas"
+version = "0.1.0"
+description = "Yearly Christmas wish-list board rollover for Pinterest"
+requires-python = ">=3.11"
+dependencies = [
+    "beautifulsoup4>=4.12",
+    "pillow>=10.0",
+    "requests>=2.31",
+]
+
+[project.scripts]
+xmas = "xmas.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

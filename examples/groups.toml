@@ -1,0 +1,14 @@
+# Board definitions, one section per family list.
+# Copy once to data/groups.toml and fill in real usernames:
+#   cp examples/groups.toml data/groups.toml
+#
+#   board_name     {year} is replaced with the list's year; names are matched exactly
+#   collaborators  Pinterest usernames invited to the new board and removed from last year's
+
+[family]
+board_name = "Christmas {year}"
+collaborators = ["family-member-1", "family-member-2"]
+
+[kelley]
+board_name = "Christmas {year} (Kelley)"
+collaborators = ["in-law-1", "in-law-2"]
